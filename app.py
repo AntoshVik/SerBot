@@ -1,18 +1,13 @@
 import subprocess
 import re
 import os
-from typing import Any
-from aiogram.types import inline_keyboard
-
 from aiogram.types.inline_keyboard import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN, TOKEN
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
-#from aiogram.utils.emoji import emojize
-from aiogram.types import ParseMode, InputMediaPhoto, InputMediaVideo, ChatActions
+from aiogram.types import ParseMode
 from aiogram.utils import executor
 from aiogram.types.message import ContentType
-from aiogram.utils.callback_data import CallbackData
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -38,13 +33,11 @@ async def unknown_message(message: types.Message):
                     result = []
                     for i in range(len(all_services_str)):
                         result.append(all_services_str.pop(0))
-                    #await bot.send_message(message.from_user.id, text=generate_services_list(result))
                     await bot.send_message(message.from_user.id, text="Page " + str(page), reply_markup=generate_services_list(result))
                 if len(all_services_str) > 10:
                     result = []
                     for i in range(10):
                         result.append(all_services_str.pop(0))
-                    #await bot.send_message(message.from_user.id, text=generate_services_list(result))
                     await bot.send_message(message.from_user.id, text="Page " + str(page), reply_markup=generate_services_list(result))
                     page += 1
                 result = []
@@ -87,6 +80,9 @@ async def call_main_menu(call: types.CallbackQuery):
     elif "inactive_" in call.data:
         name = call.data.split('_')[1]
         await bot.send_message(chat_id=call.message.chat.id, text=start_service(name))
+    elif "service_" in call.data:
+        name = call.data.split('_')[1]
+        await bot.send_message(chat_id=call.message.chat.id, text=status(status_service(name)))
     else:
         await bot.send_message(chat_id=call.message.chat.id, text=call.data + " Not Found")
 
@@ -114,31 +110,21 @@ def all_services():
             cell_data.append([parts[1], parts[2], parts[3], parts[4], description])
             continue
         cell_data.append([parts[0], parts[1], parts[2], parts[3], description])
-    #  UNIT      LOAD      ACTIVE   SUB     DESCRIPTION
     return cell_data
 
 def generate_services_list(services):
-#    generated = ''
     inline_kb_full = InlineKeyboardMarkup(row_width=3)
     for line in services:
-        #inline_kb_full.add(unit_name(line[0]), load_name(line[1], line[0]), active_name(line[2], line[0]), sub_name(line[3], line[0]))
-        #generated += unit_name(line[0]) + " " + load_name(line[1]) + " " + active_name(line[2]) + " " + sub_name(line[3]) + "\n"
-
         inline_kb_full.row(unit_name(line[0]))
         inline_kb_full.row(InlineKeyboardButton('DESCR: ' + line[4], callback_data='call'))
         inline_kb_full.add(active_name(line[2], line[0]), reload_button(line[0]))
-    #TODO
-    #line[1] LOAD//loaded/not-found/
-    #line[2] ACTIVE//active/inactive/
-    #line[3] SUB//running/dead/exited/
-    #return generated
     return inline_kb_full
 
 def reload_button(name):
     return InlineKeyboardButton('🔄', callback_data='reload_' + deservice(name))
 
 def unit_name(name):
-    return InlineKeyboardButton('SERVICE: ' + deservice(name), callback_data=deservice(name))
+    return InlineKeyboardButton(deservice(name), callback_data='service_' + deservice(name))
 
 def deservice(name):
     return name.replace(".service", "")
@@ -203,7 +189,7 @@ def restart_service(name_service):
     return name_service + " Restarted"
 
 def status_service(name_service):
-    command = subprocess.check_output("systemctl status " +  name_service, shell=True).strip()
+    command = subprocess.Popen(["systemctl", "status",  name_service], stdout=subprocess.PIPE)
     (output, err) = command.communicate()
     output = output.decode('utf-8')
     service_regx = r"Loaded:.*\/(.*service);"
@@ -218,7 +204,15 @@ def status_service(name_service):
             service_status['status'] = status_search.group(1).strip()
             service_status['since'] = status_search.group(2).strip()
             service_status['uptime'] = status_search.group(3).strip()
+    service_status['real_name'] = name_service + ".servvice"
     return service_status
+
+def status(service_status):
+    service = service_status.get('real_name')
+    status = service_status.get('status')
+    since = service_status.get('since')
+    uptime = service_status.get('uptime')
+    return "SERVICE: " + str(service) + "\n" + "STATUS: " + str(status) + "\n" + "SINCE: " + str(since) + "\n" + "UPTIME: " + str(uptime)
 
 def ports():
     command = subprocess.check_output("netstat -ltnp", shell=True).strip().decode()
@@ -230,7 +224,6 @@ def ports():
         if i == "":
             continue
         parts = i.split()
-        #                   Proto    Recv-Q    Send-Q    Local    Foreign    State    PID/Program name
         cell_data.append([parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]])
     return cell_data
 
