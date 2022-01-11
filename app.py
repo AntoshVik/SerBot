@@ -204,7 +204,7 @@ def status_service(name_service):
             service_status['status'] = status_search.group(1).strip()
             service_status['since'] = status_search.group(2).strip()
             service_status['uptime'] = status_search.group(3).strip()
-    service_status['real_name'] = name_service + ".servvice"
+    service_status['real_name'] = name_service + ".service"
     return service_status
 
 def status(service_status):
