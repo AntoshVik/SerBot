@@ -1,2 +1,2 @@
 # SerBot
-Bot for controll services of linux server
+Telegram Bot on aiogram for controlling services of linux server
