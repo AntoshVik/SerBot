@@ -1,6 +1,7 @@
 import subprocess
 import re
 import os
+from aiogram.types import message
 from aiogram.types.inline_keyboard import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN, TOKEN
 from aiogram import Bot, types
@@ -72,19 +73,27 @@ async def unknown_message(message: types.Message):
 @dp.callback_query_handler(lambda c: c.data)
 async def call_main_menu(call: types.CallbackQuery):
     if "reload_" in call.data:
-        name = call.data.split('_')[1]
+        splited = call.data.split('_')
+        splited.pop()
+        name = '_'.join(splited)
         await bot.send_message(chat_id=call.message.chat.id, text=restart_service(name))
     elif "active_" in call.data:
-        name = call.data.split('_')[1]
+        splited = call.data.split('_')
+        splited.pop()
+        name = '_'.join(splited)
         await bot.send_message(chat_id=call.message.chat.id, text=stop_service(name))
     elif "inactive_" in call.data:
-        name = call.data.split('_')[1]
+        splited = call.data.split('_')
+        splited.pop()
+        name = '_'.join(splited)
         await bot.send_message(chat_id=call.message.chat.id, text=start_service(name))
     elif "service_" in call.data:
-        name = call.data.split('_')[1]
+        splited = call.data.split('_')
+        splited.pop()
+        name = '_'.join(splited)
         await bot.send_message(chat_id=call.message.chat.id, text=status(status_service(name)))
     else:
-        await bot.send_message(chat_id=call.message.chat.id, text=call.data + " Not Found")
+        await bot.send_message(chat_id=call.message.chat.id, text="🤔")
 
 def writeto(filename, mode, data):
     f = open(os.path.join(os.path.dirname(__file__), filename), mode)
