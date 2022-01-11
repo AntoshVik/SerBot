@@ -74,22 +74,22 @@ async def unknown_message(message: types.Message):
 async def call_main_menu(call: types.CallbackQuery):
     if "reload_" in call.data:
         splited = call.data.split('_')
-        splited.pop()
+        splited.pop(0)
         name = '_'.join(splited)
         await bot.send_message(chat_id=call.message.chat.id, text=restart_service(name))
     elif "active_" in call.data:
         splited = call.data.split('_')
-        splited.pop()
+        splited.pop(0)
         name = '_'.join(splited)
         await bot.send_message(chat_id=call.message.chat.id, text=stop_service(name))
     elif "inactive_" in call.data:
         splited = call.data.split('_')
-        splited.pop()
+        splited.pop(0)
         name = '_'.join(splited)
         await bot.send_message(chat_id=call.message.chat.id, text=start_service(name))
     elif "service_" in call.data:
         splited = call.data.split('_')
-        splited.pop()
+        splited.pop(0)
         name = '_'.join(splited)
         await bot.send_message(chat_id=call.message.chat.id, text=status(status_service(name)))
     else:
